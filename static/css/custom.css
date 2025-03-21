@@ -1,0 +1,84 @@
+/* Tank visualization styles */
+.tank-visualization {
+    position: relative;
+    width: 80px;
+    height: 120px;
+    margin: 0 auto;
+}
+
+.tank-outline {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--bs-light);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.tank-fill {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 0%; /* Will be set by JavaScript */
+    background: linear-gradient(to bottom, var(--bs-info) 0%, var(--bs-primary) 100%);
+    transition: height 1s ease-in-out;
+}
+
+/* Metric card styling */
+.metric-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    height: 100%;
+}
+
+.metric-title {
+    font-size: 0.9rem;
+    color: var(--bs-gray-400);
+    margin-bottom: 5px;
+}
+
+.metric-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Chart container styling */
+.peaks-chart-container {
+    height: 250px;
+}
+
+/* Form and general styling */
+.example-hex {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+#hex-input {
+    font-family: monospace;
+}
+
+pre {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Status color indicators */
+.status-good {
+    color: var(--bs-success);
+}
+
+.status-warning {
+    color: var(--bs-warning);
+}
+
+.status-danger {
+    color: var(--bs-danger);
+}
+
+.status-empty {
+    color: var(--bs-gray-500);
+}
