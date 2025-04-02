@@ -350,7 +350,7 @@ def process_hex_string(hex_string, tank_height=0.254):
     if not hex_string:
         return None
         
-    parsed = updated_parse_payload(hex_string)
+    parsed = parse_payload(hex_string)
     if not parsed:
         return None
         
