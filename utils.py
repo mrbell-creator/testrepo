@@ -94,9 +94,6 @@ def updated_parse_payload(hex_payload):
         return None
 
 
-# Export this version so it can be used as the main parser
-parse_payload = updated_parse_payload
-
 def parse_payload(hex_payload):
     """
     Parses a Mopeka sensor payload from its hex representation.
