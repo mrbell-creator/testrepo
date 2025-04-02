@@ -11,6 +11,92 @@ def hex_to_bytearray(hex_string):
     except ValueError:
         return None
 
+def updated_parse_payload(hex_payload):
+    data = hex_to_bytearray(hex_payload)
+    if not data or len(data) < 8:
+        return None
+
+    try:
+        header = data[:2]
+        mfrData = data[2:]
+        mfr_header = mfrData[0:2]
+
+        accelo_byte = mfrData[2]
+        accelo_map = [-7, 1, 2, 3, 4, 5, 6, 0, -6, -5, -8, 7, -4, -3, -2, -1]
+        accelo_x = accelo_map[accelo_byte & 0x0F]
+        accelo_y = accelo_map[(accelo_byte >> 4) & 0x0F]
+
+        hwid = mfrData[3]
+        hw_family = "xl" if (hwid & 1) == 1 else "gen2"
+        hw_version = hwid & 0xCF
+
+        battery_raw = mfrData[4]
+        battery_voltage = (battery_raw / 256.0) * 2.0 + 1.5
+
+        temp_byte = mfrData[5]
+        raw_temp = temp_byte & 0x3F
+        temperature = -40.0 if raw_temp == 0 else (raw_temp - 25) * 1.776964
+        slow_update = (temp_byte & 0x40) != 0
+        sync_pressed = (temp_byte & 0x80) != 0
+
+        adv = []
+        if hw_family == "xl":
+            # Bit-packed parsing for XL sensors
+            last_time = 0
+            w = 6
+            data_length = len(mfrData)
+            for q in range(12):
+                bitpos = q * 10
+                bytepos = bitpos // 8
+                off = bitpos % 8
+                if w + bytepos + 1 >= data_length:
+                    break
+                v = mfrData[w + bytepos] + (mfrData[w + bytepos + 1] << 8)
+                v = v >> off
+                dt = (v & 0x1F) + 1
+                v = v >> 5
+                amp = v & 0x1F
+                this_time = last_time + dt
+                last_time = this_time
+                if this_time > 255:
+                    break
+                if amp == 0:
+                    continue
+                amp = (amp - 1) * 4 + 6
+                adv.append({"a": amp, "i": this_time * 2})
+        else:
+            # Simpler fixed-size structure for Gen2
+            i = 6
+            while i + 1 < len(mfrData):
+                amp = mfrData[i]
+                offset = mfrData[i + 1]
+                if amp == 0 and offset == 0:
+                    break
+                adv.append({"a": amp, "i": offset})
+                i += 2
+
+        return {
+            "header": header.hex(),
+            "manufacturer_header": mfr_header.hex(),
+            "accelerometer": {"raw": accelo_byte, "x": accelo_x, "y": accelo_y},
+            "hardware_id": hwid,
+            "hardware_family": hw_family,
+            "hardware_version": hw_version,
+            "battery_raw": battery_raw,
+            "battery_voltage": round(battery_voltage, 2),
+            "temperature_raw": raw_temp,
+            "temperature_c": round(temperature, 2),
+            "slow_update": slow_update,
+            "sync_pressed": sync_pressed,
+            "advertisement_peaks": adv
+        }
+    except (IndexError, ValueError):
+        return None
+
+
+# Export this version so it can be used as the main parser
+parse_payload = updated_parse_payload
+
 def parse_payload(hex_payload):
     """
     Parses a Mopeka sensor payload from its hex representation.
@@ -267,7 +353,7 @@ def process_hex_string(hex_string, tank_height=0.254):
     if not hex_string:
         return None
         
-    parsed = parse_payload(hex_string)
+    parsed = updated_parse_payload(hex_string)
     if not parsed:
         return None
         
