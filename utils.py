@@ -105,3 +105,39 @@ def get_example_hex_strings():
         "1AFF0D000002B567D3CE3147041C088041041C28E041007E287B270302A0AD",
         "1AFF0D000002AC67153CE04100000C30C000036C9080074D287B270302A0AD",
     ]
+
+def process_hex_string(hex_string, tank_height=0.254):
+    """
+    Main function to process a hex string and return all relevant data.
+
+    Args:
+        hex_string (str): The Bluetooth hex string to parse
+        tank_height (float): The full tank height in meters for percentage calculation
+
+    Returns:
+        dict: A dictionary containing all the parsed information, or None if parsing failed
+    """
+    if not hex_string:
+        logging.warning("[process_hex_string] Empty input string.")
+        return None
+
+    parsed = parse_payload(hex_string)
+    if not parsed:
+        logging.error("[process_hex_string] Failed to parse payload.")
+        return None
+
+    peaks = parsed.get("advertisement_peaks", [])
+    tof = compute_pulse_echo_time2(peaks)
+    level_in_inches = legacy_level_inches(tof)
+    level_cm = legacy_level_cm(tof)
+    is_empty = tof == 0
+
+    result = parsed.copy()
+    result["tof"] = tof
+    result["level_inches"] = round(level_in_inches, 2)
+    result["level_cm"] = round(level_cm, 2)
+    result["is_empty"] = is_empty
+    result["percentage"] = legacy_level_percentage(tof, tank_height) if not is_empty else 0
+
+    logging.debug("[process_hex_string] Result: %s", result)
+    return result
